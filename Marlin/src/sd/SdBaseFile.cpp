@@ -33,7 +33,7 @@
 
 #include "SdBaseFile.h"
 
-#include "../Marlin.h"
+#include "../MarlinCore.h"
 SdBaseFile* SdBaseFile::cwd_ = 0;   // Pointer to Current Working Directory
 
 // callback function for date/time
@@ -374,7 +374,8 @@ int8_t SdBaseFile::lsPrintNext(uint8_t flags, uint8_t indent) {
   return DIR_IS_FILE(&dir) ? 1 : 2;
 }
 
-// Format directory name field from a 8.3 name string
+// Format file/directory name to a 8.3 name string
+// EG: Filename.Ext becomes FILENAMEEXT
 bool SdBaseFile::make83Name(const char* str, uint8_t* name, const char** ptr) {
   uint8_t n = 7,                      // Max index until a dot is found
           i = 11;

@@ -28,13 +28,7 @@
 #include "../../inc/MarlinConfig.h"
 #include "../shared/Delay.h"
 
-#if (__cplusplus == 201703L) && defined(__has_include)
-  #define HAS_SWSERIAL __has_include(<SoftwareSerial.h>)
-#else
-  #define HAS_SWSERIAL HAS_TMC220x
-#endif
-
-#if HAS_SWSERIAL
+#if TMC_HAS_SW_SERIAL
   #include "SoftwareSerial.h"
 #endif
 
@@ -74,7 +68,13 @@ void HAL_init() {
   FastIO_init();
 
   #if ENABLED(SDSUPPORT)
-    OUT_WRITE(SDSS, HIGH); // Try to set SDSS inactive before any other SPI users start up
+    //this is done temporarily (to avoid that some device on the bus tries to become the master)
+    //when the spi device is initialized it's done again.
+    for (uint8_t dev = 0; dev < NUM_SPI_DEVICES; dev++) {
+      OUT_WRITE(CS_OF_DEV(dev), HIGH); //Set ChipSelect PIN high (inactive) before any other SPI users start up
+      if (IS_DEV_SD(dev) && SW_OF_SD(dev) != NC) //if it's an SD card and has a real switch set the pin as input
+          _SET_MODE(SW_OF_SD(dev), DLV_OF_SD(dev) == LOW ? INPUT_PULLUP : INPUT_PULLDOWN); //with the appropriate pull
+    }
   #endif
 
   #if PIN_EXISTS(LED)
@@ -93,7 +93,7 @@ void HAL_init() {
   while (!LL_PWR_IsActiveFlag_BRR());
   #endif // EEPROM_EMULATED_SRAM
 
-  #if HAS_SWSERIAL
+  #if TMC_HAS_SW_SERIAL
     SoftwareSerial::setInterruptPriority(SWSERIAL_TIMER_IRQ_PRIO, 0);
   #endif
 }
